@@ -67,6 +67,8 @@ public class ZLEditImageModel: NSObject {
     
     public let mosaicPaths: [ZLMosaicPath]
     
+    public let shapePaths: [ZLShapePath]
+    
     public let clipStatus: ZLClipStatus?
     
     public let adjustStatus: ZLAdjustStatus?
@@ -80,6 +82,7 @@ public class ZLEditImageModel: NSObject {
     public init(
         drawPaths: [ZLDrawPath] = [],
         mosaicPaths: [ZLMosaicPath] = [],
+        shapePaths: [ZLShapePath] = [],
         clipStatus: ZLClipStatus? = nil,
         adjustStatus: ZLAdjustStatus? = nil,
         selectFilter: ZLFilter? = nil,
@@ -88,6 +91,7 @@ public class ZLEditImageModel: NSObject {
     ) {
         self.drawPaths = drawPaths
         self.mosaicPaths = mosaicPaths
+        self.shapePaths = shapePaths
         self.clipStatus = clipStatus
         self.adjustStatus = adjustStatus
         self.selectFilter = selectFilter
@@ -233,6 +237,36 @@ open class ZLEditImageViewController: UIViewController {
     
     open var adjustCollectionView: UICollectionView?
     
+    open var shapeColorCollectionView: UICollectionView?
+    
+    open var shapeTypeCollectionView: UICollectionView?
+    
+    open lazy var shapeFillBtn: ZLEnlargeButton = {
+        let btn = ZLEnlargeButton(type: .custom)
+        btn.setImage(ZLShapeIconGenerator.fillToggleIcon(isFilled: false), for: .normal)
+        btn.setImage(ZLShapeIconGenerator.fillToggleIcon(isFilled: true), for: .selected)
+        btn.addTarget(self, action: #selector(shapeFillBtnClick), for: .touchUpInside)
+        btn.isHidden = true
+        btn.layer.cornerRadius = 18
+        btn.layer.masksToBounds = true
+        return btn
+    }()
+    
+    open lazy var shapeFillBtnBgBlurView: UIVisualEffectView = {
+        let view = UIVisualEffectView(effect: UIBlurEffect(style: .light))
+        view.isHidden = true
+        view.layer.cornerRadius = 18
+        view.layer.masksToBounds = true
+        return view
+    }()
+    
+    open lazy var shapeFillLineView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .zl.rgba(89, 95, 107, 0.8)
+        view.isHidden = true
+        return view
+    }()
+    
     open lazy var eraserBtn: ZLEnlargeButton = {
         let btn = ZLEnlargeButton(type: .custom)
         btn.setImage(.zl.getImage("zl_eraser"), for: .normal)
@@ -337,6 +371,26 @@ open class ZLEditImageViewController: UIViewController {
     var mosaicPaths: [ZLMosaicPath]
     
     var mosaicLineWidth: CGFloat = 25
+    
+    // Show shape annotations.
+    lazy var shapeImageView: UIImageView = {
+        let view = UIImageView()
+        view.contentMode = .scaleAspectFit
+        view.isUserInteractionEnabled = true
+        return view
+    }()
+    
+    let shapeColors: [UIColor]
+    
+    var currentShapeColor: UIColor
+    
+    var currentShapeType: ZLImageEditorConfiguration.ShapeType
+    
+    var currentShapeFilled: Bool
+    
+    var shapePaths: [ZLShapePath]
+    
+    var shapeLineWidth: CGFloat = 6
     
     var thumbnailFilterImages: [UIImage] = []
     
@@ -480,6 +534,11 @@ open class ZLEditImageViewController: UIViewController {
         currentFilter = editModel?.selectFilter ?? .normal
         drawPaths = editModel?.drawPaths ?? []
         mosaicPaths = editModel?.mosaicPaths ?? []
+        shapePaths = editModel?.shapePaths ?? []
+        shapeColors = ZLImageEditorConfiguration.default().shapeColors
+        currentShapeColor = ZLImageEditorConfiguration.default().defaultShapeColor
+        currentShapeType = ZLImageEditorConfiguration.default().defaultShapeType
+        currentShapeFilled = ZLImageEditorConfiguration.default().defaultShapeFilled
         currentAdjustStatus = editModel?.adjustStatus ?? ZLAdjustStatus()
         preAdjustStatus = currentAdjustStatus
         
@@ -498,6 +557,10 @@ open class ZLEditImageViewController: UIViewController {
         
         if !drawColors.contains(currentDrawColor) {
             currentDrawColor = drawColors.first!
+        }
+        
+        if !shapeColors.contains(currentShapeColor) {
+            currentShapeColor = shapeColors.first!
         }
         
         stickers = editModel?.stickers.compactMap {
@@ -590,6 +653,9 @@ open class ZLEditImageViewController: UIViewController {
         eraserLineView.frame = CGRect(x: eraserBtn.zl.right + 11, y: eraserBtn.frame.midY - 10, width: 1, height: 20)
         drawColorCollectionView?.frame = CGRect(x: eraserLineView.zl.right + 11, y: 30, width: view.zl.width - eraserLineView.zl.right - 31, height: drawColViewH)
         
+        // Shape tool layout
+        layoutShapeToolViews()
+        
         adjustCollectionView?.frame = CGRect(x: 20, y: 20, width: view.zl.width - 40, height: adjustColViewH)
         if ZLImageEditorUIConfiguration.default().adjustSliderType == .vertical {
             adjustSlider?.frame = CGRect(x: view.zl.width - 60, y: view.zl.height / 2 - 100, width: 60, height: 200)
@@ -629,6 +695,9 @@ open class ZLEditImageViewController: UIViewController {
         
         if !drawPaths.isEmpty {
             drawLine()
+        }
+        if !shapePaths.isEmpty {
+            drawShapes()
         }
         if !mosaicPaths.isEmpty {
             generateNewMosaicImage()
@@ -697,6 +766,7 @@ open class ZLEditImageViewController: UIViewController {
         mosaicImageLayer?.frame = imageView.bounds
         mosaicImageLayerMaskLayer?.frame = imageView.bounds
         drawingImageView.frame = imageView.frame
+        shapeImageView.frame = imageView.frame
         stickersContainer.frame = imageView.frame
         
         // Optimization for long pictures.
@@ -720,6 +790,7 @@ open class ZLEditImageViewController: UIViewController {
         mainScrollView.addSubview(containerView)
         containerView.addSubview(imageView)
         containerView.addSubview(drawingImageView)
+        containerView.addSubview(shapeImageView)
         containerView.addSubview(stickersContainer)
         
         view.addSubview(topShadowView)
@@ -759,6 +830,53 @@ open class ZLEditImageViewController: UIViewController {
             
             ZLDrawColorCell.zl.register(drawCV)
             drawColorCollectionView = drawCV
+        }
+        
+        if tools.contains(.shape) {
+            // Shape color collection view
+            let shapeColorLayout = UICollectionViewFlowLayout()
+            let shapeColorItemWidth: CGFloat = 36
+            shapeColorLayout.itemSize = CGSize(width: shapeColorItemWidth, height: shapeColorItemWidth)
+            shapeColorLayout.minimumLineSpacing = 0
+            shapeColorLayout.minimumInteritemSpacing = 0
+            shapeColorLayout.scrollDirection = .horizontal
+            let shapeColorTopBottomInset = (drawColViewH - shapeColorItemWidth) / 2
+            shapeColorLayout.sectionInset = UIEdgeInsets(top: shapeColorTopBottomInset, left: 0, bottom: shapeColorTopBottomInset, right: 0)
+            
+            let shapeColorCV = UICollectionView(frame: .zero, collectionViewLayout: shapeColorLayout)
+            shapeColorCV.backgroundColor = .clear
+            shapeColorCV.delegate = self
+            shapeColorCV.dataSource = self
+            shapeColorCV.isHidden = true
+            bottomShadowView.addSubview(shapeColorCV)
+            
+            ZLDrawColorCell.zl.register(shapeColorCV)
+            shapeColorCollectionView = shapeColorCV
+            
+            // Shape type collection view
+            let shapeTypeLayout = UICollectionViewFlowLayout()
+            shapeTypeLayout.itemSize = CGSize(width: 30, height: 30)
+            shapeTypeLayout.minimumLineSpacing = 10
+            shapeTypeLayout.minimumInteritemSpacing = 10
+            shapeTypeLayout.scrollDirection = .horizontal
+            
+            let shapeTypeCV = UICollectionView(frame: .zero, collectionViewLayout: shapeTypeLayout)
+            shapeTypeCV.backgroundColor = .clear
+            shapeTypeCV.delegate = self
+            shapeTypeCV.dataSource = self
+            shapeTypeCV.isHidden = true
+            shapeTypeCV.showsHorizontalScrollIndicator = false
+            bottomShadowView.addSubview(shapeTypeCV)
+            
+            ZLShapeTypeCell.zl.register(shapeTypeCV)
+            shapeTypeCollectionView = shapeTypeCV
+            
+            // Shape fill toggle button
+            shapeFillBtn.isSelected = currentShapeFilled
+            bottomShadowView.addSubview(shapeFillBtnBgBlurView)
+            bottomShadowView.addSubview(shapeFillBtn)
+            bottomShadowView.addSubview(shapeFillLineView)
+            shapeFillBtnBgBlurView.isHidden = !currentShapeFilled
         }
         
         if tools.contains(.filter) {
@@ -914,6 +1032,7 @@ open class ZLEditImageViewController: UIViewController {
         let transform = CGAffineTransform(rotationAngle: currentClipStatus.angle.zl.toPi)
         imageView.transform = transform
         drawingImageView.transform = transform
+        shapeImageView.transform = transform
         stickersContainer.transform = transform
     }
     
@@ -932,6 +1051,7 @@ open class ZLEditImageViewController: UIViewController {
         }
         
         setDrawViews(hidden: !isSelected)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: true)
     }
@@ -991,6 +1111,7 @@ open class ZLEditImageViewController: UIViewController {
         
         selectedTool = nil
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: true)
     }
@@ -1016,6 +1137,7 @@ open class ZLEditImageViewController: UIViewController {
         
         selectedTool = nil
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: true)
     }
@@ -1033,6 +1155,7 @@ open class ZLEditImageViewController: UIViewController {
         
         selectedTool = nil
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: true)
     }
@@ -1047,6 +1170,7 @@ open class ZLEditImageViewController: UIViewController {
         
         generateNewMosaicLayerIfAdjust()
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: true)
     }
@@ -1060,6 +1184,7 @@ open class ZLEditImageViewController: UIViewController {
         }
         
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: !isSelected)
         setAdjustViews(hidden: true)
     }
@@ -1074,8 +1199,23 @@ open class ZLEditImageViewController: UIViewController {
         
         generateAdjustImageRef()
         setDrawViews(hidden: true)
+        setShapeViews(hidden: true)
         setFilterViews(hidden: true)
         setAdjustViews(hidden: !isSelected)
+    }
+    
+    func shapeBtnClick() {
+        let isSelected = selectedTool != .shape
+        if isSelected {
+            selectedTool = .shape
+        } else {
+            selectedTool = nil
+        }
+        
+        setDrawViews(hidden: true)
+        setShapeViews(hidden: !isSelected)
+        setFilterViews(hidden: true)
+        setAdjustViews(hidden: true)
     }
     
     private func setDrawViews(hidden: Bool) {
@@ -1083,6 +1223,43 @@ open class ZLEditImageViewController: UIViewController {
         eraserBtnBgBlurView.isHidden = hidden || !eraserBtn.isSelected
         eraserLineView.isHidden = hidden
         drawColorCollectionView?.isHidden = hidden
+    }
+    
+    private func setShapeViews(hidden: Bool) {
+        shapeColorCollectionView?.isHidden = hidden
+        shapeTypeCollectionView?.isHidden = hidden
+        updateShapeFillBtnVisibility(hidden: hidden)
+    }
+    
+    private func updateShapeFillBtnVisibility(hidden: Bool) {
+        let supportsFill = currentShapeType == .oval || currentShapeType == .rectangle
+        shapeFillBtn.isHidden = hidden || !supportsFill
+        shapeFillBtnBgBlurView.isHidden = hidden || !supportsFill || !shapeFillBtn.isSelected
+        shapeFillLineView.isHidden = hidden || !supportsFill
+        layoutShapeToolViews()
+    }
+    
+    private func layoutShapeToolViews() {
+        let shapeTypeWidth: CGFloat = CGFloat(ZLImageEditorConfiguration.ShapeType.allCases.count) * 40 + 10
+        shapeTypeCollectionView?.frame = CGRect(x: 20, y: 30 + (drawColViewH - 30) / 2, width: shapeTypeWidth, height: 30)
+        
+        var colorX = 20 + shapeTypeWidth + 10
+        
+        if !shapeFillBtn.isHidden {
+            let fillX = 20 + shapeTypeWidth + 5
+            shapeFillBtn.frame = CGRect(x: fillX, y: 30 + (drawColViewH - 36) / 2, width: 36, height: 36)
+            shapeFillBtnBgBlurView.frame = shapeFillBtn.frame
+            shapeFillLineView.frame = CGRect(x: shapeFillBtn.frame.maxX + 8, y: shapeFillBtn.frame.midY - 10, width: 1, height: 20)
+            colorX = shapeFillLineView.frame.maxX + 8
+        }
+        
+        shapeColorCollectionView?.frame = CGRect(x: colorX, y: 30, width: view.zl.width - colorX - 20, height: drawColViewH)
+    }
+    
+    @objc private func shapeFillBtnClick() {
+        currentShapeFilled.toggle()
+        shapeFillBtn.isSelected = currentShapeFilled
+        shapeFillBtnBgBlurView.isHidden = !currentShapeFilled
     }
     
     private func setFilterViews(hidden: Bool) {
@@ -1116,6 +1293,7 @@ open class ZLEditImageViewController: UIViewController {
         
         var hasEdit = true
         if drawPaths.isEmpty,
+           shapePaths.isEmpty,
            currentClipStatus.editRect.size == imageSize,
            currentClipStatus.angle == 0,
            mosaicPaths.isEmpty,
@@ -1158,6 +1336,7 @@ open class ZLEditImageViewController: UIViewController {
                 editModel = ZLEditImageModel(
                     drawPaths: drawPaths,
                     mosaicPaths: mosaicPaths,
+                    shapePaths: shapePaths,
                     clipStatus: currentClipStatus,
                     adjustStatus: currentAdjustStatus,
                     selectFilter: currentFilter,
@@ -1269,6 +1448,48 @@ open class ZLEditImageViewController: UIViewController {
                     editorManager.storeAction(.mosaic(path))
                 }
                 generateNewMosaicImage()
+            }
+        } else if selectedTool == .shape {
+            let point = pan.location(in: shapeImageView)
+            if pan.state == .began {
+                setToolView(show: false)
+                
+                let originalRatio = min(mainScrollView.frame.width / originalImage.size.width, mainScrollView.frame.height / originalImage.size.height)
+                let ratio = min(
+                    mainScrollView.frame.width / currentClipStatus.editRect.width,
+                    mainScrollView.frame.height / currentClipStatus.editRect.height
+                )
+                let scale = ratio / originalRatio
+                var size = shapeImageView.frame.size
+                size.width /= scale
+                size.height /= scale
+                if shouldSwapSize {
+                    swap(&size.width, &size.height)
+                }
+                
+                var toImageScale = ZLEditImageViewController.maxDrawLineImageWidth / size.width
+                if editImage.size.width / editImage.size.height > 1 {
+                    toImageScale = ZLEditImageViewController.maxDrawLineImageWidth / size.height
+                }
+                
+                let shapePath = ZLShapePath(
+                    shapeType: currentShapeType,
+                    pathColor: currentShapeColor,
+                    pathWidth: shapeLineWidth / mainScrollView.zoomScale,
+                    ratio: ratio / originalRatio / toImageScale,
+                    startPoint: point,
+                    isFilled: currentShapeFilled
+                )
+                shapePaths.append(shapePath)
+            } else if pan.state == .changed {
+                let shapePath = shapePaths.last
+                shapePath?.updateShape(to: point)
+                drawShapes()
+            } else if pan.state == .cancelled || pan.state == .ended {
+                setToolView(show: true, delay: 0.5)
+                if let shapePath = shapePaths.last {
+                    editorManager.storeAction(.shape(shapePath))
+                }
             }
         }
     }
@@ -1599,6 +1820,35 @@ open class ZLEditImageViewController: UIViewController {
         }
     }
     
+    func drawShapes() {
+        let originalRatio = min(mainScrollView.frame.width / originalImage.size.width, mainScrollView.frame.height / originalImage.size.height)
+        let ratio = min(
+            mainScrollView.frame.width / currentClipStatus.editRect.width,
+            mainScrollView.frame.height / currentClipStatus.editRect.height
+        )
+        let scale = ratio / originalRatio
+        var size = shapeImageView.frame.size
+        size.width /= scale
+        size.height /= scale
+        if shouldSwapSize {
+            swap(&size.width, &size.height)
+        }
+        var toImageScale = ZLEditImageViewController.maxDrawLineImageWidth / size.width
+        if editImage.size.width / editImage.size.height > 1 {
+            toImageScale = ZLEditImageViewController.maxDrawLineImageWidth / size.height
+        }
+        size.width *= toImageScale
+        size.height *= toImageScale
+        
+        shapeImageView.image = UIGraphicsImageRenderer.zl.renderImage(size: size) { context in
+            context.setAllowsAntialiasing(true)
+            context.setShouldAntialias(true)
+            for shapePath in shapePaths {
+                shapePath.drawPath()
+            }
+        }
+    }
+    
     private func changeFilter(_ filter: ZLFilter) {
         func adjustImage(_ image: UIImage) -> UIImage {
             guard tools.contains(.adjust), !currentAdjustStatus.allValueIsZero else {
@@ -1726,6 +1976,7 @@ open class ZLEditImageViewController: UIViewController {
         } imageActions: { context in
             editImage.draw(at: .zero)
             drawingImageView.image?.draw(in: CGRect(origin: .zero, size: imageSize))
+            shapeImageView.image?.draw(in: CGRect(origin: .zero, size: imageSize))
             
             if !stickersContainer.subviews.isEmpty {
                 let scale = self.imageSize.width / stickersContainer.frame.width
@@ -1778,7 +2029,7 @@ extension ZLEditImageViewController: UIGestureRecognizerDelegate {
             guard let st = selectedTool else {
                 return false
             }
-            return (st == .draw || st == .mosaic) && !isScrolling
+            return (st == .draw || st == .mosaic || st == .shape) && !isScrolling
         }
         
         return true
@@ -1839,6 +2090,10 @@ extension ZLEditImageViewController: UICollectionViewDataSource, UICollectionVie
             return drawColors.count
         } else if collectionView == filterCollectionView {
             return thumbnailFilterImages.count
+        } else if collectionView == shapeColorCollectionView {
+            return shapeColors.count
+        } else if collectionView == shapeTypeCollectionView {
+            return ZLImageEditorConfiguration.ShapeType.allCases.count
         } else {
             return adjustTools.count
         }
@@ -1882,6 +2137,26 @@ extension ZLEditImageViewController: UICollectionViewDataSource, UICollectionVie
             }
             
             return cell
+        } else if collectionView == shapeColorCollectionView {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ZLDrawColorCell.zl.identifier, for: indexPath) as! ZLDrawColorCell
+            
+            let c = shapeColors[indexPath.row]
+            cell.color = c
+            if c == currentShapeColor {
+                cell.bgWhiteView.layer.transform = CATransform3DMakeScale(1.2, 1.2, 1)
+            } else {
+                cell.bgWhiteView.layer.transform = CATransform3DIdentity
+            }
+            
+            return cell
+        } else if collectionView == shapeTypeCollectionView {
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ZLShapeTypeCell.zl.identifier, for: indexPath) as! ZLShapeTypeCell
+            
+            let shapeType = ZLImageEditorConfiguration.ShapeType.allCases[indexPath.row]
+            cell.shapeType = shapeType
+            cell.isChoosen = shapeType == currentShapeType
+            
+            return cell
         } else {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ZLAdjustToolCell.zl.identifier, for: indexPath) as! ZLAdjustToolCell
             
@@ -1920,6 +2195,8 @@ extension ZLEditImageViewController: UICollectionViewDataSource, UICollectionVie
                 filterBtnClick()
             case .adjust:
                 adjustBtnClick()
+            case .shape:
+                shapeBtnClick()
             }
         } else if collectionView == drawColorCollectionView {
             currentDrawColor = drawColors[indexPath.row]
@@ -1928,6 +2205,11 @@ extension ZLEditImageViewController: UICollectionViewDataSource, UICollectionVie
             let filter = ZLImageEditorConfiguration.default().filters[indexPath.row]
             editorManager.storeAction(.filter(oldFilter: currentFilter, newFilter: filter))
             changeFilter(filter)
+        } else if collectionView == shapeColorCollectionView {
+            currentShapeColor = shapeColors[indexPath.row]
+        } else if collectionView == shapeTypeCollectionView {
+            currentShapeType = ZLImageEditorConfiguration.ShapeType.allCases[indexPath.row]
+            updateShapeFillBtnVisibility(hidden: false)
         } else {
             let tool = adjustTools[indexPath.row]
             if tool != selectedAdjustTool {
@@ -2060,6 +2342,8 @@ extension ZLEditImageViewController: ZLEditorManagerDelegate {
             undoOrRedoFilter(oldFilter)
         case let .adjust(oldStatus, _):
             undoOrRedoAdjust(oldStatus)
+        case let .shape(path):
+            undoShape(path)
         }
     }
     
@@ -2079,6 +2363,8 @@ extension ZLEditImageViewController: ZLEditorManagerDelegate {
             undoOrRedoFilter(newFilter)
         case let .adjust(_, newStatus):
             undoOrRedoAdjust(newStatus)
+        case let .shape(path):
+            redoShape(path)
         }
     }
     
@@ -2117,6 +2403,16 @@ extension ZLEditImageViewController: ZLEditorManagerDelegate {
     private func redoMosaic(_ path: ZLMosaicPath) {
         mosaicPaths.append(path)
         generateNewMosaicImage()
+    }
+    
+    private func undoShape(_ path: ZLShapePath) {
+        shapePaths.removeLast()
+        drawShapes()
+    }
+    
+    private func redoShape(_ path: ZLShapePath) {
+        shapePaths.append(path)
+        drawShapes()
     }
     
     private func undoSticker(_ oldState: ZLBaseStickertState?, _ newState: ZLBaseStickertState?) {

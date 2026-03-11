@@ -25,6 +25,8 @@ class ViewController: UIViewController {
     
     var editImageAdjustToolSwitch: UISwitch!
     
+    var editImageShapeToolSwitch: UISwitch!
+    
     var pickImageBtn: UIButton!
     
     var resultImageView: UIImageView!
@@ -174,6 +176,22 @@ class ViewController: UIViewController {
         editImageAdjustToolSwitch.snp.makeConstraints { make in
             make.left.equalTo(adjustToolLabel.snp.right).offset(spacing)
             make.centerY.equalTo(adjustToolLabel)
+        }
+        
+        let shapeToolLabel = createLabel("Shape")
+        editImageToolView.addSubview(shapeToolLabel)
+        shapeToolLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(adjustToolLabel)
+            make.left.equalTo(self.editImageToolView.snp.centerX)
+        }
+        
+        editImageShapeToolSwitch = UISwitch()
+        editImageShapeToolSwitch.isOn = config.tools.contains(.shape)
+        editImageShapeToolSwitch.addTarget(self, action: #selector(shapeToolChanged), for: .valueChanged)
+        editImageToolView.addSubview(editImageShapeToolSwitch)
+        editImageShapeToolSwitch.snp.makeConstraints { make in
+            make.left.equalTo(shapeToolLabel.snp.right).offset(spacing)
+            make.centerY.equalTo(shapeToolLabel)
             make.bottom.equalTo(self.editImageToolView)
         }
         
@@ -288,6 +306,14 @@ class ViewController: UIViewController {
             config.tools.removeAll { $0 == .adjust }
         } else {
             config.tools.append(.adjust)
+        }
+    }
+    
+    @objc func shapeToolChanged() {
+        if config.tools.contains(.shape) {
+            config.tools.removeAll { $0 == .shape }
+        } else {
+            config.tools.append(.shape)
         }
     }
     

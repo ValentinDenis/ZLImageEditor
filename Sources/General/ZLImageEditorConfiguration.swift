@@ -51,14 +51,14 @@ public class ZLImageEditorConfiguration: NSObject {
         ZLImageEditorConfiguration.single = ZLImageEditorConfiguration()
     }
     
-    private var pri_tools: [ZLImageEditorConfiguration.EditTool] = [.draw, .clip, .imageSticker, .textSticker, .mosaic, .filter, .adjust]
+    private var pri_tools: [ZLImageEditorConfiguration.EditTool] = [.draw, .clip, .imageSticker, .textSticker, .mosaic, .filter, .adjust, .shape]
     /// Edit image tools. (Default order is draw, clip, imageSticker, textSticker, mosaic, filtter)
     /// Because Objective-C Array can't contain Enum styles, so this property is not available in Objective-C.
     /// - warning: If you want to use the image sticker feature, you must provide a view that implements ZLImageStickerContainerDelegate.
     public var tools: [ZLImageEditorConfiguration.EditTool] {
         get {
             if pri_tools.isEmpty {
-                return [.draw, .clip, .imageSticker, .textSticker, .mosaic, .filter, .adjust]
+                return [.draw, .clip, .imageSticker, .textSticker, .mosaic, .filter, .adjust, .shape]
             } else {
                 return pri_tools
             }
@@ -186,6 +186,30 @@ public class ZLImageEditorConfiguration: NSObject {
         }
     }
     
+    private var pri_shapeColors = ZLImageEditorConfiguration.defaultColors
+    /// Shape colors for image editor.
+    @objc public var shapeColors: [UIColor] {
+        get {
+            if pri_shapeColors.isEmpty {
+                return ZLImageEditorConfiguration.defaultColors
+            } else {
+                return pri_shapeColors
+            }
+        }
+        set {
+            pri_shapeColors = newValue
+        }
+    }
+    
+    /// The default shape color. If this color not in shapeColors, will pick the first color in shapeColors as the default.
+    @objc public var defaultShapeColor: UIColor = .zl.rgba(249, 80, 81)
+    
+    /// The default shape type for the shape tool.
+    public var defaultShapeType: ZLImageEditorConfiguration.ShapeType = .line
+    
+    /// Whether shapes are filled by default. Defaults to false (stroke only). Note: line and arrow shapes are not affected by this setting.
+    @objc public var defaultShapeFilled: Bool = false
+    
     /// If image edit tools only has clip and this property is true. When you click edit, the cropping interface (i.e. ZLClipImageViewController) will be displayed. Defaults to false
     @objc public var showClipDirectlyIfOnlyHasClipTool = false
     
@@ -202,6 +226,7 @@ public extension ZLImageEditorConfiguration {
         case mosaic
         case filter
         case adjust
+        case shape
     }
     
     @objc enum AdjustTool: Int {
@@ -257,6 +282,13 @@ public extension ZLImageEditorConfiguration {
                 return .heavy
             }
         }
+    }
+    
+    @objc enum ShapeType: Int, CaseIterable {
+        case line
+        case arrow
+        case oval
+        case rectangle
     }
 }
 

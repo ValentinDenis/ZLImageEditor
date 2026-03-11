@@ -118,4 +118,28 @@ public extension ZLImageEditorConfiguration {
         showClipDirectlyIfOnlyHasClipTool = value
         return self
     }
+    
+    @discardableResult
+    func shapeColors(_ colors: [UIColor]) -> ZLImageEditorConfiguration {
+        shapeColors = colors
+        return self
+    }
+    
+    @discardableResult
+    func defaultShapeColor(_ color: UIColor) -> ZLImageEditorConfiguration {
+        defaultShapeColor = color
+        return self
+    }
+    
+    @discardableResult
+    func defaultShapeType(_ type: ZLImageEditorConfiguration.ShapeType) -> ZLImageEditorConfiguration {
+        defaultShapeType = type
+        return self
+    }
+    
+    @discardableResult
+    func defaultShapeFilled(_ filled: Bool) -> ZLImageEditorConfiguration {
+        defaultShapeFilled = filled
+        return self
+    }
 }
