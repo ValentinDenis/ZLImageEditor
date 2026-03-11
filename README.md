@@ -58,6 +58,9 @@ ZLEditImageViewController.showEditImageVC(parentVC: self, image: image, editMode
     Improved sticker editing interactions with coordinated gesture handling.
     Added dedicated text sticker content rendering for a clearer editing experience.
     Improved doodle smoothing and eraser hit detection for smoother drawing and more reliable stroke removal.
+● 2.0.7
+  Add:
+    Added shape annotation tool (line, arrow, oval, rectangle) with color selection, fill/stroke toggle, and undo/redo.
 ● 2.0.6
   Fix:
     Fixed the issue where the eraser position was displayed incorrectly when editing pictures.
