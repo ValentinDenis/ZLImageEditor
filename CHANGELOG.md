@@ -2,6 +2,15 @@
 
 -----
 
+## [2.0.7](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.7) (2026-03-11)
+### Add:
+* Added shape annotation tool with support for line, arrow, oval, and rectangle shapes.
+* Shapes support color selection, fill/stroke toggle (for oval and rectangle), and undo/redo.
+* Shape state is persisted in edit model for re-editing.
+* Programmatic icon generation for shape tool (no asset files needed).
+
+-----
+
 ## [2.0.6](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.6) (2025-10-17)
 ### Fix:
 * Fixed the issue where the eraser position was displayed incorrectly when editing pictures.
