@@ -164,3 +164,123 @@ public class ZLMosaicPath: NSObject {
         linePoints.append(CGPoint(x: point.x / ratio, y: point.y / ratio))
     }
 }
+
+// MARK: Shape path
+
+public class ZLShapePath: NSObject {
+    let shapeType: ZLImageEditorConfiguration.ShapeType
+    
+    let pathColor: UIColor
+    
+    let lineWidth: CGFloat
+    
+    let ratio: CGFloat
+    
+    let isFilled: Bool
+    
+    private var startPoint: CGPoint?
+    
+    private(set) var path = UIBezierPath()
+    
+    init(
+        shapeType: ZLImageEditorConfiguration.ShapeType,
+        pathColor: UIColor,
+        pathWidth: CGFloat,
+        ratio: CGFloat,
+        startPoint: CGPoint,
+        isFilled: Bool = false
+    ) {
+        self.shapeType = shapeType
+        self.pathColor = pathColor
+        self.lineWidth = pathWidth / ratio
+        self.ratio = ratio
+        self.isFilled = isFilled
+        self.startPoint = CGPoint(x: startPoint.x / ratio, y: startPoint.y / ratio)
+        
+        path.lineWidth = self.lineWidth
+        path.lineCapStyle = .round
+        path.lineJoinStyle = .round
+        
+        super.init()
+    }
+    
+    func updateShape(to point: CGPoint) {
+        let scaledPoint = CGPoint(x: point.x / ratio, y: point.y / ratio)
+        guard let start = startPoint else { return }
+        
+        switch shapeType {
+        case .line:
+            path.removeAllPoints()
+            path.move(to: start)
+            path.addLine(to: scaledPoint)
+            
+        case .arrow:
+            let end = scaledPoint
+            let length = hypot(end.x - start.x, end.y - start.y)
+            guard length > 0 else { return }
+            
+            let tailWidth = lineWidth * 3
+            let headWidth = tailWidth * 3
+            let tailLength = max(0, length - (sqrt(3) / 2) * headWidth)
+            
+            let points = [
+                CGPoint(x: 0, y: tailWidth / 2),
+                CGPoint(x: tailLength, y: tailWidth / 2),
+                CGPoint(x: tailLength, y: headWidth / 2),
+                CGPoint(x: length, y: 0),
+                CGPoint(x: tailLength, y: -headWidth / 2),
+                CGPoint(x: tailLength, y: -tailWidth / 2),
+                CGPoint(x: 0, y: -tailWidth / 2)
+            ]
+            
+            let cosine = (end.x - start.x) / length
+            let sine = (end.y - start.y) / length
+            let transform = CGAffineTransform(a: cosine, b: sine, c: -sine, d: cosine, tx: start.x, ty: start.y)
+            
+            let cgPath = CGMutablePath()
+            cgPath.addLines(between: points, transform: transform)
+            cgPath.closeSubpath()
+            
+            path = UIBezierPath(cgPath: cgPath)
+            
+        case .oval:
+            let rect = CGRect(
+                origin: start,
+                size: CGSize(width: scaledPoint.x - start.x, height: scaledPoint.y - start.y)
+            )
+            path.removeAllPoints()
+            path.append(UIBezierPath(ovalIn: rect))
+            path.lineWidth = lineWidth
+            
+        case .rectangle:
+            let rect = CGRect(
+                origin: start,
+                size: CGSize(width: scaledPoint.x - start.x, height: scaledPoint.y - start.y)
+            )
+            path.removeAllPoints()
+            path.append(UIBezierPath(rect: rect))
+            path.lineWidth = lineWidth
+        }
+    }
+    
+    func drawPath() {
+        pathColor.set()
+        
+        switch shapeType {
+        case .arrow:
+            pathColor.setFill()
+            path.fill()
+        case .line:
+            pathColor.setStroke()
+            path.stroke()
+        case .oval, .rectangle:
+            if isFilled {
+                pathColor.setFill()
+                path.fill()
+            } else {
+                pathColor.setStroke()
+                path.stroke()
+            }
+        }
+    }
+}

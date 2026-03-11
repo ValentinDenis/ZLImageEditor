@@ -34,6 +34,7 @@ public enum ZLEditorAction {
     case mosaic(ZLMosaicPath)
     case filter(oldFilter: ZLFilter?, newFilter: ZLFilter?)
     case adjust(oldStatus: ZLAdjustStatus, newStatus: ZLAdjustStatus)
+    case shape(ZLShapePath)
 }
 
 protocol ZLEditorManagerDelegate: AnyObject {

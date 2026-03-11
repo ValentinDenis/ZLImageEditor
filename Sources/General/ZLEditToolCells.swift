@@ -51,6 +51,9 @@ class ZLEditToolCell: UICollectionViewCell {
             case .adjust:
                 icon.image = .zl.getImage("zl_adjust")
                 icon.highlightedImage = .zl.getImage("zl_adjust_selected")
+            case .shape:
+                icon.image = .zl.getImage("zl_shape") ?? ZLShapeIconGenerator.toolbarIcon()
+                icon.highlightedImage = .zl.getImage("zl_shape_selected") ?? ZLShapeIconGenerator.toolbarIcon(highlighted: true)
             }
             if let color = UIColor.zl.toolIconHighlightedColor {
                 icon.highlightedImage = icon.highlightedImage?
@@ -217,5 +220,140 @@ class ZLAdjustToolCell: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// MARK: shape type cell
+
+class ZLShapeTypeCell: UICollectionViewCell {
+    lazy var icon: UIImageView = {
+        let view = UIImageView()
+        view.contentMode = .scaleAspectFit
+        return view
+    }()
+    
+    var shapeType: ZLImageEditorConfiguration.ShapeType = .line {
+        didSet {
+            updateIcon()
+        }
+    }
+    
+    var isChoosen: Bool = false {
+        didSet {
+            updateIcon()
+        }
+    }
+    
+    private func updateIcon() {
+        icon.image = ZLShapeIconGenerator.shapeIcon(for: shapeType, selected: isChoosen)
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        
+        contentView.addSubview(icon)
+    }
+    
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        icon.frame = contentView.bounds
+    }
+}
+
+// MARK: Programmatic shape icon generator
+
+enum ZLShapeIconGenerator {
+    /// Generate the toolbar icon for the shape tool (a simple diamond/rhombus shape).
+    static func toolbarIcon(highlighted: Bool = false) -> UIImage {
+        let size = CGSize(width: 30, height: 30)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            let color: UIColor = highlighted ? .zl.rgba(3, 193, 94) : .white
+            color.setStroke()
+            
+            // Draw a simple diamond shape
+            let path = UIBezierPath()
+            path.lineWidth = 2
+            path.move(to: CGPoint(x: 15, y: 3))
+            path.addLine(to: CGPoint(x: 27, y: 15))
+            path.addLine(to: CGPoint(x: 15, y: 27))
+            path.addLine(to: CGPoint(x: 3, y: 15))
+            path.close()
+            path.stroke()
+        }
+    }
+    
+    /// Generate an icon for the fill/stroke toggle button.
+    static func fillToggleIcon(isFilled: Bool) -> UIImage {
+        let size = CGSize(width: 30, height: 30)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor.white.setStroke()
+            
+            let rect = CGRect(x: 5, y: 5, width: 20, height: 20)
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: 3)
+            path.lineWidth = 2
+            path.stroke()
+            
+            if isFilled {
+                UIColor.white.setFill()
+                let innerRect = CGRect(x: 8, y: 8, width: 14, height: 14)
+                let innerPath = UIBezierPath(roundedRect: innerRect, cornerRadius: 2)
+                innerPath.fill()
+            }
+        }
+    }
+    
+    /// Generate an icon for a specific shape type.
+    static func shapeIcon(for type: ZLImageEditorConfiguration.ShapeType, selected: Bool) -> UIImage {
+        let size = CGSize(width: 30, height: 30)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            let color: UIColor = selected ? .white : .zl.rgba(160, 160, 160)
+            color.setStroke()
+            
+            switch type {
+            case .line:
+                let path = UIBezierPath()
+                path.lineWidth = 2.5
+                path.lineCapStyle = .round
+                path.move(to: CGPoint(x: 4, y: 26))
+                path.addLine(to: CGPoint(x: 26, y: 4))
+                path.stroke()
+                
+            case .arrow:
+                let path = UIBezierPath()
+                path.lineWidth = 2.5
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.move(to: CGPoint(x: 4, y: 26))
+                path.addLine(to: CGPoint(x: 26, y: 4))
+                path.stroke()
+                
+                // Arrowhead
+                let head = UIBezierPath()
+                head.lineWidth = 2.5
+                head.lineCapStyle = .round
+                head.lineJoinStyle = .round
+                head.move(to: CGPoint(x: 18, y: 4))
+                head.addLine(to: CGPoint(x: 26, y: 4))
+                head.addLine(to: CGPoint(x: 26, y: 12))
+                head.stroke()
+                
+            case .oval:
+                let rect = CGRect(x: 3, y: 5, width: 24, height: 20)
+                let path = UIBezierPath(ovalIn: rect)
+                path.lineWidth = 2.5
+                path.stroke()
+                
+            case .rectangle:
+                let rect = CGRect(x: 4, y: 5, width: 22, height: 20)
+                let path = UIBezierPath(rect: rect)
+                path.lineWidth = 2.5
+                path.stroke()
+            }
+        }
     }
 }
