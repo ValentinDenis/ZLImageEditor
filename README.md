@@ -58,6 +58,9 @@ ZLEditImageViewController.showEditImageVC(parentVC: self, image: image, editMode
     Improved sticker editing interactions with coordinated gesture handling.
     Added dedicated text sticker content rendering for a clearer editing experience.
     Improved doodle smoothing and eraser hit detection for smoother drawing and more reliable stroke removal.
+● 2.0.10
+  Fix:
+    Added defaultLocalization to Package.swift (required by SPM since localized resources are present in the bundle).
 ● 2.0.9
   Fix:
     Fixed Package.swift swift-tools-version for SPM resolution on iOS 16 deployment target.
