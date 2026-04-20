@@ -53,6 +53,9 @@ ZLEditImageViewController.showEditImageVC(parentVC: self, image: image, editMode
 ### <a id="ChangeLog"></a>Change Log
 > [More logs](https://github.com/longitachi/ZLImageEditor/blob/master/CHANGELOG.md)
 ```
+● 2.0.9
+  Fix:
+    Fixed Package.swift swift-tools-version for SPM resolution on iOS 16 deployment target.
 ● 2.0.8
   Add:
     Tap on the canvas with the shape tool to drop a default-sized shape (honors fill toggle and thickness).
@@ -126,7 +129,7 @@ $ carthage update ZLImageEditor
 
 #### Swift Package Manager
 1. Select File > Swift Packages > Add Package Dependency. Enter https://github.com/longitachi/ZLImageEditor.git in the "Choose Package Repository" dialog.
-2. In the next page, specify the version resolving rule as "Up to Next Major" with "2.0.8" as its earliest version.
+2. In the next page, specify the version resolving rule as "Up to Next Major" with "2.0.9" as its earliest version.
 3. After Xcode checking out the source and resolving the version, you can choose the "ZLImageEditor" library and add it to your app target.
 
 ### <a id="Support"></a> Support

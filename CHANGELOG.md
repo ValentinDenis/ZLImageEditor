@@ -2,6 +2,12 @@
 
 -----
 
+## [2.0.9](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.9) (2026-04-20)
+### Fix:
+* Bumped `swift-tools-version` in `Package.swift` from 5.3 to 5.7 — required for the `.iOS(.v16)` platform declaration introduced in 2.0.8. SPM resolution failed with "'v16' is unavailable" otherwise.
+
+-----
+
 ## [2.0.8](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.8) (2026-04-20)
 ### Add:
 * Tap on the canvas with the shape tool to drop a default-sized shape. Size scales with the selected thickness and honors the fill/stroke toggle.
