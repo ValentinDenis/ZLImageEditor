@@ -207,9 +207,12 @@ public class ZLImageEditorConfiguration: NSObject {
     /// The default shape type for the shape tool.
     public var defaultShapeType: ZLImageEditorConfiguration.ShapeType = .line
     
-    /// Whether shapes are filled by default. Defaults to false (stroke only). Note: line and arrow shapes are not affected by this setting.
-    @objc public var defaultShapeFilled: Bool = false
-    
+    /// Whether shapes are filled by default. Defaults to true (filled). Note: line and arrow shapes are not affected by this setting.
+    @objc public var defaultShapeFilled: Bool = true
+
+    /// The default stroke width for the shape tool. Defaults to `.thin`.
+    @objc public var defaultShapeLineWidth: ZLImageEditorConfiguration.ShapeLineWidth = .thin
+
     /// If image edit tools only has clip and this property is true. When you click edit, the cropping interface (i.e. ZLClipImageViewController) will be displayed. Defaults to false
     @objc public var showClipDirectlyIfOnlyHasClipTool = false
     
@@ -289,6 +292,29 @@ public extension ZLImageEditorConfiguration {
         case arrow
         case oval
         case rectangle
+    }
+
+    @objc enum ShapeLineWidth: Int, CaseIterable {
+        case thin
+        case medium
+        case thick
+
+        var value: CGFloat {
+            switch self {
+            case .thin: return 3
+            case .medium: return 6
+            case .thick: return 10
+            }
+        }
+
+        /// Default size (in screen-space points) for a tap-placed shape at this thickness.
+        var tapShapeSize: CGFloat {
+            switch self {
+            case .thin: return 40
+            case .medium: return 60
+            case .thick: return 90
+            }
+        }
     }
 }
 

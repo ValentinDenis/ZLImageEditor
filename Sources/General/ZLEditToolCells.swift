@@ -356,4 +356,36 @@ enum ZLShapeIconGenerator {
             }
         }
     }
+
+    /// Icon for the shape-width toolbar button (white horizontal bar of varying thickness).
+    static func widthIcon(for width: ZLImageEditorConfiguration.ShapeLineWidth) -> UIImage {
+        let size = CGSize(width: 30, height: 30)
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            UIColor.white.setFill()
+            let thickness: CGFloat
+            switch width {
+            case .thin: thickness = 2
+            case .medium: thickness = 5
+            case .thick: thickness = 8
+            }
+            let rect = CGRect(x: 5, y: (30 - thickness) / 2, width: 20, height: thickness)
+            UIBezierPath(roundedRect: rect, cornerRadius: thickness / 2).fill()
+        }
+    }
+
+    /// Smaller icon for the width menu items.
+    static func widthMenuIcon(for width: ZLImageEditorConfiguration.ShapeLineWidth) -> UIImage {
+        let size = CGSize(width: 24, height: 24)
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            UIColor.label.setFill()
+            let thickness: CGFloat
+            switch width {
+            case .thin: thickness = 2
+            case .medium: thickness = 4
+            case .thick: thickness = 7
+            }
+            let rect = CGRect(x: 2, y: (24 - thickness) / 2, width: 20, height: thickness)
+            UIBezierPath(roundedRect: rect, cornerRadius: thickness / 2).fill()
+        }
+    }
 }

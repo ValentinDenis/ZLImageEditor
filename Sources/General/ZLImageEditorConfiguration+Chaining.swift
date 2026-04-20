@@ -142,4 +142,10 @@ public extension ZLImageEditorConfiguration {
         defaultShapeFilled = filled
         return self
     }
+
+    @discardableResult
+    func defaultShapeLineWidth(_ width: ZLImageEditorConfiguration.ShapeLineWidth) -> ZLImageEditorConfiguration {
+        defaultShapeLineWidth = width
+        return self
+    }
 }

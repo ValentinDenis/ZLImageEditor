@@ -58,6 +58,12 @@ ZLEditImageViewController.showEditImageVC(parentVC: self, image: image, editMode
     Improved sticker editing interactions with coordinated gesture handling.
     Added dedicated text sticker content rendering for a clearer editing experience.
     Improved doodle smoothing and eraser hit detection for smoother drawing and more reliable stroke removal.
+● 2.0.8
+  Add:
+    Tap on the canvas with the shape tool to drop a default-sized shape (honors fill toggle and thickness).
+    Shape-width picker (thin / medium / thick) and shape-type picker converted to compact icon menus.
+  Change:
+    Bumped minimum iOS deployment target to 16.0.
 ● 2.0.7
   Add:
     Added shape annotation tool (line, arrow, oval, rectangle) with color selection, fill/stroke toggle, and undo/redo.
@@ -89,7 +95,7 @@ To integrate ZLImageEditor into your Xcode project using CocoaPods, specify it t
 
 ```
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
+platform :ios, '16.0'
 use_frameworks!
 
 target 'MyApp' do
