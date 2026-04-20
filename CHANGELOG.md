@@ -2,6 +2,19 @@
 
 -----
 
+## [2.0.8](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.8) (2026-04-20)
+### Add:
+* Tap on the canvas with the shape tool to drop a default-sized shape. Size scales with the selected thickness and honors the fill/stroke toggle.
+* Shape-width picker (thin / medium / thick) as a compact icon menu on the shape toolbar.
+* `defaultShapeLineWidth` configuration option (defaults to `.thin`).
+
+### Change:
+* Replaced the horizontal shape-type collection view with a compact icon-only `UIMenu` button.
+* `defaultShapeFilled` now defaults to `true`.
+* Bumped minimum iOS deployment target to 16.0 (required for `UIMenu.preferredElementSize` and palette display).
+
+-----
+
 ## [2.0.7](https://github.com/longitachi/ZLImageEditor/releases/tag/2.0.7) (2026-03-11)
 ### Add:
 * Added shape annotation tool with support for line, arrow, oval, and rectangle shapes.

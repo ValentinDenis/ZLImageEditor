@@ -53,6 +53,12 @@ ZLEditImageViewController.showEditImageVC(parentVC: self, image: image, editMode
 ### <a id="ChangeLog"></a>Change Log
 > [More logs](https://github.com/longitachi/ZLImageEditor/blob/master/CHANGELOG.md)
 ```
+● 2.0.8
+  Add:
+    Tap on the canvas with the shape tool to drop a default-sized shape (honors fill toggle and thickness).
+    Shape-width picker (thin / medium / thick) and shape-type picker converted to compact icon menus.
+  Change:
+    Bumped minimum iOS deployment target to 16.0.
 ● 2.0.7
   Add:
     Added shape annotation tool (line, arrow, oval, rectangle) with color selection, fill/stroke toggle, and undo/redo.
@@ -87,7 +93,7 @@ To integrate ZLImageEditor into your Xcode project using CocoaPods, specify it t
 
 ```
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
+platform :ios, '16.0'
 use_frameworks!
 
 target 'MyApp' do
@@ -120,7 +126,7 @@ $ carthage update ZLImageEditor
 
 #### Swift Package Manager
 1. Select File > Swift Packages > Add Package Dependency. Enter https://github.com/longitachi/ZLImageEditor.git in the "Choose Package Repository" dialog.
-2. In the next page, specify the version resolving rule as "Up to Next Major" with "2.0.7" as its earliest version.
+2. In the next page, specify the version resolving rule as "Up to Next Major" with "2.0.8" as its earliest version.
 3. After Xcode checking out the source and resolving the version, you can choose the "ZLImageEditor" library and add it to your app target.
 
 ### <a id="Support"></a> Support
