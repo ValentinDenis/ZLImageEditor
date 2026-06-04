@@ -310,9 +310,9 @@ public extension ZLImageEditorConfiguration {
         /// Default size (in screen-space points) for a tap-placed shape at this thickness.
         var tapShapeSize: CGFloat {
             switch self {
-            case .thin: return 40
-            case .medium: return 60
-            case .thick: return 90
+            case .thin: return 24
+            case .medium: return 36
+            case .thick: return 54
             }
         }
     }
