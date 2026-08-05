@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name                  = 'ZLImageEditor'
-  s.version               = '3.0.0'
+  s.version               = '3.0.1'
   s.summary               = 'A powerful image editor framework. Supports graffiti, cropping, mosaic, text stickers, picture stickers, filters, adjust, shapes.'
 
   s.homepage              = 'https://github.com/longitachi/ZLImageEditor'

@@ -2,6 +2,12 @@
 
 -----
 
+## [3.0.1](https://github.com/ValentinDenis/ZLImageEditor/releases/tag/3.0.1) (2026-08-05)
+### Change:
+* Rebased the fork on upstream 3.0.0: the shape tool (2.0.7–2.0.11) now sits on top of the improved sticker/drawing interactions.
+
+-----
+
 ## [3.0.0](https://github.com/longitachi/ZLImageEditor/releases/tag/3.0.0) (2026-05-22)
 ### Add:
 * Improved sticker editing interactions with coordinated gesture handling.
